@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "user_hierarchies"
   gem.homepage = "http://github.com/fluke777/user_hierarchies"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{Gem aimed to help with dealing of adjancency list base user hierarchies}
+  gem.description = %Q{This gem should enable you to easily work with user hierarchies. Specially those that is based on the model of SalesForce}
   gem.email = "svarovsky@gooddata.com"
   gem.authors = ["Tomas Svarovsky"]
   # dependencies defined in Gemfile
