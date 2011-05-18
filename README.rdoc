@@ -1,6 +1,78 @@
 = user_hierarchies
 
-Description goes here.
+This gem should serve as a convenient way, how to work with user hierarchies. This was specifically tailored for the model used in Salesforce because we work a lot with it. If you are not familiar with it the user is stored in Salesforce db like this
+
+Name, ID, ManagerID
+Joe, 1, 2
+Bob, 2, 3
+Jim, 3,
+
+This is called adjacency list. This gem wraps these lines in a model and enables to express the relationships in reasonable methods so even a mediocre guy should be able to get something out of it if he knows enough ruby. The problem with adjacency lists are that they are quite useful for programming languages but rather unpleasant to use in SQL like languages.
+
+In SOQL you can very effectively write something like
+
+SELECT Name, Manager.Name where ID = 1
+
+But it is very tricky to get list of all managers/subordinates of Joe or to determine if Jim and Bob are on the sam level in the hierarchy.
+
+require 'user_hierarchies'
+
+GDC::UserHierarchies::from_sf(login, password) do |hierarchy|
+    hierarchy.users.each do |user|
+        puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
+    end
+end
+
+This script will download the hierarchy from SF account with credentials you provide and prints all subordinates of a person if that person has any. You can do the same for a file
+
+GDC::UserHierarchies::from_file("file_name") do |hierarchy|
+    hierarchy.users.each do |user|
+        puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
+    end
+end
+
+Since I was trying no to tie the implementation to expectations about specific file format you sometimes need to provide the program with some additional hints where to look for things. For building the hierarchy you need to tell the program where to find user id and where to find manager's id. It is also useful to put there a field that is used with to_s method for descriptions etc.
+
+Imagine this CSV
+
+    name,UsErID,MaNaGeRID
+    Joe, 1, 2
+    Bob, 2, 3
+    Jim, 3,
+
+This program does exactly the same thing as the one above
+
+    GDC::UserHierarchies::from_file("file_name", {
+        :user_id => :UsErID,
+        :manager_id => :MaNaGeRID,
+        :description_field => :name
+    }) do |hierarchy|
+        hierarchy.users.each do |user|
+            puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
+        end
+    end
+
+
+You can easily use this gem for some interactive verification of the relations in the hierarchy
+
+    GDC::UserHierarchies::from_sf(login, password) do |hierarchy|
+        hierarchy.go_to_repl
+    end
+
+when you run this script you will be able to use irb with all the stuff preloaded you can then interactively play with the hierarchy
+
+    joe = hierarchy.find_user("1231safdas432")
+    bob = hierarchy.find_user("123123wqe2423")
+    
+    joe.is_manager?
+    bob.is_manager?
+    
+    bob.is_manager_of? joe
+    bob.is_subordinate_of? joe
+
+Speed
+
+I do not know if the library is fast or not. For the biggest customer I have used this which has like 6000 users this was fast enough (under 1 second to generate mnagers with subordinates of each in a csv). I bet there might be done some improvements.
 
 == Contributing to user_hierarchies
  

@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    bond (0.4.1)
     diff-lcs (1.1.2)
     facets (2.9.1)
     fastercsv (1.5.4)
@@ -11,6 +12,8 @@ GEM
       rake
     rake (0.8.7)
     rcov (0.9.9)
+    ripl (0.4.1)
+      bond (~> 0.4.0)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -29,4 +32,5 @@ DEPENDENCIES
   fastercsv
   jeweler (~> 1.6.0)
   rcov
+  ripl
   rspec (~> 2.3.0)

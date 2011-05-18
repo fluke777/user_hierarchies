@@ -1,6 +1,7 @@
 require 'user'
 require 'fastercsv'
 require 'pp'
+require 'ripl'
 
 module GDC
   class UserHierarchy
@@ -92,6 +93,10 @@ module GDC
       top_of_hierarchies.each do |user|
         index = crawl_next(user, index + 1)
       end
+    end
+    
+    def go_interactive
+      Ripl.start :binding => self.instance_eval{ binding }
     end
     
     def as_png
