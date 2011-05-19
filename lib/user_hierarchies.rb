@@ -2,6 +2,7 @@ require 'user'
 require 'fastercsv'
 require 'pp'
 require 'ripl'
+require 'rforce'
 
 module GDC
   class UserHierarchy
@@ -9,6 +10,25 @@ module GDC
     self::USER_ID = "ID"
     self::MANAGER_ID = "MANAGERID"
     self::DESCRIBE = 'USERNAME'
+    
+    
+    def load_from_sf(user, pasword)
+    
+        rforce_connection = RForce::Binding.new 'https://www.salesforce.com/services/Soap/u/20.0'
+        rforce_connection.login(user, pass)
+        
+        user_description = rforce_connection.describeSOBject("User")
+        
+        pp user_description
+        
+        # result = rforce_connection.query :queryString => "SELECT "
+        #   file_name = "#{REPORTS_VALIDATION_PATH}/#{report['link'].split('/').last}-#{Date.today.to_s}.json"
+        #   File.open(file_name, 'w') do |f|
+        #     f.write result.to_json
+        #   end
+        #   puts "Created file #{file_name}"
+        # end
+    end
     
     def self::read_from_csv(filename, options = {})
       

@@ -2,6 +2,7 @@ source "http://rubygems.org"
 gem "fastercsv"
 gem "facets"
 gem "ripl"
+gem "rforce"
 # gem 'graphviz'
 
 # Add dependencies to develop your gem here.
