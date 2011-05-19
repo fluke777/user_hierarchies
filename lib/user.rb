@@ -11,13 +11,9 @@ class User
     @attributes = attributes.symbolize_keys!
   end
 
-  # def to_s
-  #   "User: user_id=#{user_id}, #{name}, manager: #{manager.name if manager}, subordinates: #{subordinates.collect {|u| u.name}.join(', ')}"
-  # end
-  # 
-  # def name
-  #   "#{first_name} #{last_name}"
-  # end
+  def to_s
+    "User: user_id=#{user_id}"
+  end
 
   def all_subordinates
     subordinates + subordinates.collect {|subordinate| subordinate.all_subordinates}.flatten

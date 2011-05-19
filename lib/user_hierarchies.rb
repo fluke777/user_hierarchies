@@ -10,37 +10,38 @@ module GDC
     self::MANAGER_ID = "MANAGERID"
     self::DESCRIBE = 'USERNAME'
     
-    def self::read_from_csv(filename)
+    def self::read_from_csv(filename, options = {})
+      
       raise "You need a block" if !block_given?
       users_data = {}
       
       FasterCSV.foreach(filename, {:headers => true}) do |row|
-        users_data[row[self::USER_ID]] = row
+        users_data[row[options[:user_id] || self::USER_ID]] = row
       end
       
-      yield self.build_hierarchy(users_data)
+      yield self.build_hierarchy(users_data, options)
     end
     
-    def self::read_from_stdin(&block)
+    def self::read_from_stdin(*options)
       raise "You need a block" if !block_given?
       users_data = {}
       
       FasterCSV($stdin, {:headers => true}) do |csv_in| 
         csv_in.each do |row|
-          users_data[row[self::USER_ID]] = row
+          users_data[row[options[:user_id] || self::USER_ID]] = row
         end
       end
-      yield self.build_hierarchy(users_data)
+      yield self.build_hierarchy(users_data, options = {})
       
     end
     
-    def self::build_hierarchy(users_data)
+    def self::build_hierarchy(users_data, options)
       users = {}
 
       # 1. create users
       # puts "1. create users"
       users_data.each_pair do |id, userData|
-        users[id] = User.new(userData[self::USER_ID], userData.to_hash)
+        users[id] = User.new(userData[options[:user_id] || self::USER_ID], userData.to_hash)
         # pp userData.to_hash
       end
 
@@ -48,7 +49,7 @@ module GDC
       # puts "2. fill their managers"
       users_data.each_pair do |id, user_data|
         user = users[id]
-        manager_id = users_data[id][self::MANAGER_ID]
+        manager_id = users_data[id][options[:manager_id] || self::MANAGER_ID]
         user.manager = users[manager_id]
       end
 
@@ -69,15 +70,28 @@ module GDC
       end
       # puts "DONE"
       
-      UserHierarchy.new(users.values, users)
+      UserHierarchy.new(users.values, options.merge({
+        :lookup => users
+      }))
       
     end
     
     attr_accessor :users
     
-    def initialize(users, lookup)
+    def initialize(users, options={})
       @users = users
-      @lookup = lookup
+      @user_id_method_name = options[:user_id] || self.class::USER_ID
+      @user_manager_id_method_name = options[:manager_id] || self.class::MANAGER_ID
+      @user_describe_method_name = options[:describe_with] || self.class::DESCRIBE
+      
+      options[:lookup].nil? ? build_lookup : @lookup = options[:lookup]
+      
+    end
+    
+    def build_lookup
+      @lookup = {}
+      x = @user_id_method_name
+      @users.each {|u| @lookup[u.send(x)] = u}
     end
     
     def find_by_id(id)
@@ -114,7 +128,7 @@ module GDC
     private
     def as_format(format)
       g = GraphViz::new( "structs", "type" => "graph" )
-      nodes = users.collect {|u| u.attributes[:graph_node] = g.add_node(u.send(GDC::UserHierarchy::DESCRIBE)); u}
+      nodes = users.collect {|u| u.attributes[:graph_node] = g.add_node(u.send(@user_describe_method_name)); u}
 
       nodes.each do |n|
         n.subordinates.each {|s| g.add_edge(n.graph_node, s.graph_node)} if n.has_subordinates?

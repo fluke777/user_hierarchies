@@ -80,3 +80,57 @@ describe "User" do
     @contractor.is_standalone?.should == true
   end
 end
+
+describe "Hierarchy" do
+  
+  before(:each) do
+    @tomas = User.new("svarovsky@gooddata.com", {
+      :first_name => "Tomas",
+      :age => 28,
+      :arbitrary_method_name => "Foo"
+    })
+
+    @standa = User.new("standa@gooddata.com", {
+      :first_name => "Standa",
+      :age => 45
+    }) 
+
+    @martin = User.new("martin@gooddata.com", {
+      :first_name => "Martin",
+      :age => 32,
+    })
+
+    @boss = User.new("boss@gooddata.com", {
+      :first_name => "The",
+      :last_name => "Boss",
+      :age => 28
+    })
+
+    @contractor = User.new("marcel@datahost.com", {
+      :first_name => "Marcel",
+      :age => 25
+    })
+
+    @boss.subordinates << @martin
+    @martin.subordinates << @tomas
+    @martin.subordinates << @standa
+    @tomas.manager = @martin
+    @standa.manager = @martin
+  end
+  
+  it "should be instantiatable with array of users" do
+    # GDC::UserHierarchy::USER_ID = :user_id
+    h = GDC::UserHierarchy.new([@tomas, @standa, @martin, @contractor], {
+      :user_id => :user_id
+    })
+    h.users.size.should == 4
+    tomas = h.find_by_id("svarovsky@gooddata.com")
+    tomas.age.should == 28
+  end
+end
+
+describe "Hierarchy" do
+  it "should load csv jsut fine" do
+    GDC
+  end
+end
