@@ -18,7 +18,8 @@ But it is very tricky to get list of all managers/subordinates of Joe or to dete
     # INTEGRATION WITH SALESFORCE WILL BE IMPLEMENTED SOOOOOOOON
     require 'user_hierarchies'
 
-    GDC::UserHierarchies::from_sf(login, password) do |hierarchy|
+
+    GoodData::UserHierarchies::UserHierarchy.from_sf(login, password) do |hierarchy|
         hierarchy.users.each do |user|
             puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
         end
@@ -26,7 +27,7 @@ But it is very tricky to get list of all managers/subordinates of Joe or to dete
 
 This script will download the hierarchy from SF account with credentials you provide and prints all subordinates of a person if that person has any. You can do the same for a file
 
-    GDC::UserHierarchies::read_from_csv("file_name") do |hierarchy|
+    ::UserHierarchies::UserHierarchy::read_from_csv("file_name") do |hierarchy|
         hierarchy.users.each do |user|
             puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
         end
@@ -43,10 +44,10 @@ Imagine this CSV
 
 This program does exactly the same thing as the one above
 
-    GDC::UserHierarchies::read_from_csv("file_name", {
-        :user_id => :UsErID,
-        :manager_id => :MaNaGeRID,
-        :description_field => :name
+    GoodData::UserHierarchies::UserHierarchy.read_from_csv("file_name", {
+        :user_id => "UsErID",
+        :manager_id => "MaNaGeRID",
+        :description_field => "name"
     }) do |hierarchy|
         hierarchy.users.each do |user|
             puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
@@ -64,7 +65,7 @@ Besides that there is little metaprogramming magic built in so if you have for e
 
 It is very easy to use this information in your program
 
-    GDC::UserHierarchies::read_from_csv("file_name") do |hierarchy|
+    GoodData::UserHierarchies::UserHierarchy.read_from_csv("file_name") do |hierarchy|
         hierarchy.users.each do |user|
             puts "#{user.name} => #{user.some_arbitrary_info}"
         end
@@ -76,7 +77,7 @@ As you can see the method name is based on the header of csv
 
 Sometimes it is nice to just dive inside the hierarchy and literally walk inside it. You can easily do this with this gem
 
-    GDC::UserHierarchies::from_sf(login, password) do |hierarchy|
+    GoodData::UserHierarchies::UserHierarchy.from_sf(login, password) do |hierarchy|
         hierarchy.go_interactive
     end
 
