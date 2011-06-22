@@ -20,79 +20,94 @@ module GoodData
 
           user_description = rforce_connection.describeSObject({:sObjectType => "User"})
 
-          user_description[:describeSObjectResponse][:result][:fields].each do |field|
-            puts field[:name]
+          field_names = user_description[:describeSObjectResponse][:result][:fields].map do |field|
+            field[:name].to_sym
           end
+          soql = "SELECT #{field_names.join(',')} FROM User"
 
-          # result = rforce_connection.query :queryString => "SELECT "
-          #   file_name = "#{REPORTS_VALIDATION_PATH}/#{report['link'].split('/').last}-#{Date.today.to_s}.json"
-          #   File.open(file_name, 'w') do |f|
-          #     f.write result.to_json
-          #   end
-          #   puts "Created file #{file_name}"
-          # end
+          result = rforce_connection.query :queryString => soql
+          records = result[:queryResponse][:result][:records]
+            users_data = {}
+            records.each do |record|
+              row = {}
+              (field_names.zip record.values_at(*field_names)).each {|pairs| row[pairs[0].to_s] = pairs[1]}
+              users_data[record[:Id]] = row
+            end
+          h = self.build_hierarchy(users_data, {
+            :user_id => "Id",
+            :manager_id => "ManagerId"
+          })
+          block_given?() ? yield(h) : h
       end
     
       def self::read_from_csv(filename, options = {})
-      
-        raise "You need a block" if !block_given?
+        user_id_key = options[:user_id] || self::USER_ID
+
         users_data = {}
-      
+
         FasterCSV.foreach(filename, {:headers => true}) do |row|
-          users_data[row[(options[:user_id] || self::USER_ID).to_s]] = row
+          users_data[row[user_id_key.to_s]] = row.to_hash
         end
-      
-        yield self.build_hierarchy(users_data, options)
+        
+        h = self.build_hierarchy(users_data, options)
+        block_given?() ? yield(h) : h
       end
-    
+
       def self::read_from_stdin(*options)
-        raise "You need a block" if !block_given?
+        user_id_key = options[:user_id] || self::USER_ID
         users_data = {}
-      
+
         FasterCSV($stdin, {:headers => true}) do |csv_in| 
           csv_in.each do |row|
-            users_data[row[options[:user_id] || self::USER_ID]] = row
+            users_data[row[users_data.to_s]] = row.to_hash
           end
         end
-        yield self.build_hierarchy(users_data, options = {})
-      
+        h = self.build_hierarchy(users_data, options = {})
+        block_given?() ? yield(h) : h
+
       end
-    
-      def self::build_hierarchy(users_data, options)
+
+      def self.create_users(users_data, user_id_key)
         users = {}
-
-        # 1. create users
-        # puts "1. create users"
-        users_data.each_pair do |id, userData|
-          users[id] = User.new(userData[options[:user_id] || self::USER_ID], userData.to_hash)
-          # pp userData.to_hash
-        end
-
-        # 2. fill their managers
-        # puts "2. fill their managers"
         users_data.each_pair do |id, user_data|
-          user = users[id]
-          manager_id = users_data[id][options[:manager_id] || self::MANAGER_ID]
+          users[id] = User.new(id, user_data)
+        end
+        users
+      end
+
+      def self.fill_managers!(users, manager_id_key)
+        users.each do |id, user|
+          manager_id = user.send manager_id_key
           user.manager = users[manager_id]
         end
+        users
+      end
 
-        # 3. fill their subordinates
-        # puts "3. fill their subordinates"
+      def self.fill_subordinates!(users, user_id_key)
         us = users.values # just the users array
         managers_subordinates = {}
         us.each do |user|
           if user.has_manager?
-            manager_id = user.manager.user_id
+            manager_id = user.manager.send user_id_key
             managers_subordinates.has_key?(manager_id) ? managers_subordinates[manager_id] << user : (managers_subordinates[manager_id] = [user])
           end
         end
-      
+
         managers_subordinates.each do |manager_id, subordinates|
           # puts "#{manager_id} #{subordinates}"
           users[manager_id].subordinates = subordinates
         end
-        # puts "DONE"
-      
+        
+      end
+
+      def self::build_hierarchy(users_data, options={})
+        user_id_key = options[:user_id] || self::USER_ID
+        manager_id_key = options[:manager_id] || self::MANAGER_ID
+
+        
+        users = create_users(users_data, user_id_key)
+        fill_managers!(users, manager_id_key)
+        fill_subordinates!(users, user_id_key)
         UserHierarchy.new(users.values, options.merge({
           :lookup => users
         }))
@@ -103,6 +118,7 @@ module GoodData
     
       def initialize(users, options={})
         @users = users
+        @options = options
         @user_id_method_name = options[:user_id] || self.class::USER_ID
         @user_manager_id_method_name = options[:manager_id] || self.class::MANAGER_ID
         @user_describe_method_name = options[:describe_with] || self.class::DESCRIBE
@@ -110,7 +126,11 @@ module GoodData
         options[:lookup].nil? ? build_lookup : @lookup = options[:lookup]
       
       end
-    
+      
+      def create_subhierarchy(partition_user)
+        UserHierarchy.new(partition_user.all_subordinates, @options)
+      end
+      
       def build_lookup
         @lookup = {}
         x = @user_id_method_name

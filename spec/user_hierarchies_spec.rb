@@ -1,4 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
+include GoodData::UserHierarchies
+
 
 describe "User" do
 
@@ -26,8 +28,8 @@ describe "User" do
     })
 
     @contractor = User.new("marcel@datahost.com", {
-      :first_name => "Marcel",
-      :age => 25
+      "first_name" => "Marcel",
+      "age" => 25
     })
 
     @boss.subordinates << @martin
@@ -35,6 +37,9 @@ describe "User" do
     @martin.subordinates << @standa
     @tomas.manager = @martin
     @standa.manager = @martin
+    
+    @contractor.first_name.should == "Marcel"
+    @contractor.age.should == 25
   end
 
   it "should return an arbitrary attribute value through method missing" do
@@ -120,17 +125,11 @@ describe "Hierarchy" do
   
   it "should be instantiatable with array of users" do
     # GDC::UserHierarchy::USER_ID = :user_id
-    h = GDC::UserHierarchy.new([@tomas, @standa, @martin, @contractor], {
+    h = UserHierarchy.new([@tomas, @standa, @martin, @contractor], {
       :user_id => :user_id
     })
     h.users.size.should == 4
     tomas = h.find_by_id("svarovsky@gooddata.com")
     tomas.age.should == 28
-  end
-end
-
-describe "Hierarchy" do
-  it "should load csv jsut fine" do
-    GDC
   end
 end
