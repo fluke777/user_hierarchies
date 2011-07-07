@@ -12,27 +12,58 @@ module GoodData
       self::MANAGER_ID = "MANAGERID"
       self::DESCRIBE = 'USERNAME'
     
+      def self.grab(options)
+        sf_module = options[:module] || fail("Specify SFDC module")
+        fields = options[:fields]
+        binding = options[:sfdc_connection]
+        output = options[:output]
+
+
+          fields = fields.split(', ') if fields.kind_of? String
+          values = fields.map {|v| v.to_sym}
+
+          query = "SELECT #{values.join(', ')} from #{sf_module}"
+          # puts query
+          answer = binding.query({:queryString => query})
+
+          output << values
+          answer[:queryResponse][:result][:records].each do |row|
+            # pp row
+          end
+
+          more_locator = answer[:queryResponse][:result][:queryLocator]
+
+          while more_locator do
+            answer_more = binding.queryMore({:queryLocator => more_locator})
+            answer_more[:queryMoreResponse][:result][:records].each do |row|
+              output << row.values_at(*values)
+            end
+            more_locator = answer_more[:queryMoreResponse][:result][:queryLocator]
+          end
+      end
     
       def self::load_from_sf(user, password)
-    
+      # puts "self::load_from_sf"
           rforce_connection = RForce::Binding.new 'https://www.salesforce.com/services/Soap/u/21.0'
           rforce_connection.login(user, password)
 
-          user_description = rforce_connection.describeSObject({:sObjectType => "User"})
+          output = []
+          fields = [:Email, :Id, :ManagerId, :GoodDataHierarchyOverride__c]
+          grab({
+            :module => 'User',
+            :output => output,
+            :fields => fields,
+            :sfdc_connection => rforce_connection
+          })
 
-          field_names = user_description[:describeSObjectResponse][:result][:fields].map do |field|
-            field[:name].to_sym
+          users_data = {}
+          output.each do |record|
+            row = {}
+            (fields.zip record).each {|pairs| row[pairs[0].to_s] = pairs[1]}
+            # puts record[1]
+            users_data[record[1]] = row
           end
-          soql = "SELECT #{field_names.join(',')} FROM User"
-
-          result = rforce_connection.query :queryString => soql
-          records = result[:queryResponse][:result][:records]
-            users_data = {}
-            records.each do |record|
-              row = {}
-              (field_names.zip record.values_at(*field_names)).each {|pairs| row[pairs[0].to_s] = pairs[1]}
-              users_data[record[:Id]] = row
-            end
+          
           h = self.build_hierarchy(users_data, {
             :user_id => "Id",
             :manager_id => "ManagerId"
@@ -103,8 +134,6 @@ module GoodData
       def self::build_hierarchy(users_data, options={})
         user_id_key = options[:user_id] || self::USER_ID
         manager_id_key = options[:manager_id] || self::MANAGER_ID
-
-        
         users = create_users(users_data, user_id_key)
         fill_managers!(users, manager_id_key)
         fill_subordinates!(users, user_id_key)
