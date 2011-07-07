@@ -26,9 +26,9 @@ module GoodData
           # puts query
           answer = binding.query({:queryString => query})
 
-          output << values
+          # output << values
           answer[:queryResponse][:result][:records].each do |row|
-            # pp row
+            output << row.values_at(*values)
           end
 
           more_locator = answer[:queryResponse][:result][:queryLocator]
