@@ -27,6 +27,7 @@ module GoodData
           answer = binding.query({:queryString => query})
 
           # output << values
+          # pp answer
           answer[:queryResponse][:result][:records].each do |row|
             output << row.values_at(*values)
           end
@@ -42,13 +43,14 @@ module GoodData
           end
       end
     
-      def self::load_from_sf(user, password)
+      def self::load_from_sf(user, password, options={})
       # puts "self::load_from_sf"
+        additional_fields = options[:additional_fields] || []
           rforce_connection = RForce::Binding.new 'https://www.salesforce.com/services/Soap/u/21.0'
           rforce_connection.login(user, password)
 
           output = []
-          fields = [:Email, :Id, :ManagerId, :GoodDataHierarchyOverride__c]
+          fields = [:Email, :Id, :ManagerId] + additional_fields
           grab({
             :module => 'User',
             :output => output,
