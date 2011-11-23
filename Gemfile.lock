@@ -1,7 +1,6 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    bond (0.4.1)
     builder (3.0.0)
     diff-lcs (1.1.2)
     facets (2.9.1)
@@ -17,8 +16,6 @@ GEM
     rforce (0.7)
       builder (~> 3.0)
       oauth (~> 0.4)
-    ripl (0.4.1)
-      bond (~> 0.4.0)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -38,5 +35,4 @@ DEPENDENCIES
   jeweler (~> 1.6.0)
   rcov
   rforce
-  ripl
   rspec (~> 2.3.0)

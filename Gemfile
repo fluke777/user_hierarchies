@@ -1,7 +1,8 @@
 source "http://rubygems.org"
 gem "fastercsv"
 gem "facets"
-gem "ripl"
+# For interactive use but problems with bond
+# gem "ripl"
 gem "rforce"
 # gem 'graphviz'
 
