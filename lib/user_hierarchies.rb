@@ -1,7 +1,7 @@
 require 'user'
 require 'fastercsv'
 require 'pp'
-require 'ripl'
+# require 'ripl'
 require 'rforce'
 
 module GoodData
@@ -184,7 +184,7 @@ module GoodData
       end
     
       def go_interactive
-        Ripl.start :binding => self.instance_eval{ binding }
+        # Ripl.start :binding => self.instance_eval{ binding }
       end
     
       def as_png
