@@ -2,7 +2,7 @@ require 'user'
 require 'fastercsv'
 require 'pp'
 # require 'ripl'
-require 'rforce'
+require 'salesforce'
 
 module GoodData
   module UserHierarchies
@@ -11,7 +11,7 @@ module GoodData
       self::USER_ID = "ID"
       self::MANAGER_ID = "MANAGERID"
       self::DESCRIBE = 'USERNAME'
-    
+=begin    
       def self.grab(options)
         sf_module = options[:module] || fail("Specify SFDC module")
         fields = options[:fields]
@@ -42,10 +42,65 @@ module GoodData
             more_locator = answer_more[:queryMoreResponse][:result][:queryLocator]
           end
       end
-    
+=end    
+
+      def self::load_roles_from_sf(user, password)
+        fields = [:Id,:ParentRoleId]
+        data = self.load_from_sf(user, password, options={
+          :module => "UserRole",
+          :fields => fields
+        })
+        
+        users_data = self.get_mapped_data(data, fields, :Id)
+        
+        h = self.build_hierarchy(users_data, {
+        :user_id => "Id",
+        :manager_id => "ParentRoleId"
+        })
+        block_given?() ? yield(h) : h
+        
+      end
+      
+      def self::load_users_from_sf(user, password)
+        fields = [:Email,:Id,:ManagerId]
+        data = self.load_from_sf(user, password, options={
+          :module => "User",
+          :fields => fields
+        })
+        
+        users_data = self.get_mapped_data(data, fields, :Id)
+        
+        
+        h = self.build_hierarchy(users_data, {
+        :user_id => "Id",
+        :manager_id => "ManagerId"
+        })
+        block_given?() ? yield(h) : h
+
+      end
+      
+      def self::get_mapped_data(data, fields, id_field)
+        user_data = {}
+        data.each do |row|
+          hash = {}
+          fields.each {|field| hash[field] = row[field]}
+          user_data[row[id_field]] = hash 
+        end
+        user_data
+      end
+      
+      
       def self::load_from_sf(user, password, options={})
-      # puts "self::load_from_sf"
-        additional_fields = options[:additional_fields] || []
+          client = Salesforce::Client.new(user, password)
+          output = []
+          client.grab({
+            :module => options[:module],
+            :output => output,
+            :fields => options[:fields],
+            :as_hash => true
+          })
+          output
+=begin          
           rforce_connection = RForce::Binding.new 'https://www.salesforce.com/services/Soap/u/21.0'
           rforce_connection.login(user, password)
 
@@ -71,6 +126,7 @@ module GoodData
             :manager_id => "ManagerId"
           })
           block_given?() ? yield(h) : h
+=end
       end
     
       def self::read_from_csv(filename, options = {})
