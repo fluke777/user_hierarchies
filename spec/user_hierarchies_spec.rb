@@ -5,38 +5,43 @@ include GoodData::UserHierarchies
 describe "User" do
 
   before(:each) do
-    @tomas = User.new("svarovsky@gooddata.com", {
+    @tomas = User.new({
       :first_name => "Tomas",
       :age => 28,
-      :arbitrary_method_name => "Foo"
+      :arbitrary_method_name => "Foo",
+      :id => "svarovsky@gooddata.com"
     })
 
-    @standa = User.new("standa@gooddata.com", {
+    @standa = User.new({
       :first_name => "Standa",
-      :age => 45
+      :age => 45,
+      :id => "standa@gooddata.com"
     }) 
 
-    @martin = User.new("martin@gooddata.com", {
+    @martin = User.new({
       :first_name => "Martin",
       :age => 32,
+      :id => "martin@gooddata.com"
     })
 
-    @boss = User.new("boss@gooddata.com", {
+    @boss = User.new({
       :first_name => "The",
       :last_name => "Boss",
-      :age => 28
+      :age => 28,
+      :id => "boss@gooddata.com"
     })
 
-    @contractor = User.new("marcel@datahost.com", {
+    @contractor = User.new({
       "first_name" => "Marcel",
-      "age" => 25
+      "age" => 25,
+      "id" => "marcel@datahost.com"
     })
 
     @boss.subordinates << @martin
     @martin.subordinates << @tomas
     @martin.subordinates << @standa
-    @tomas.manager = @martin
-    @standa.manager = @martin
+    @tomas.managers << @martin
+    @standa.managers << @martin
     
     @contractor.first_name.should == "Marcel"
     @contractor.age.should == 25
@@ -89,38 +94,43 @@ end
 describe "Hierarchy" do
   
   before(:each) do
-    @tomas = User.new("svarovsky@gooddata.com", {
+    @tomas = User.new({
       :first_name => "Tomas",
       :age => 28,
-      :arbitrary_method_name => "Foo"
+      :arbitrary_method_name => "Foo",
+      :id => "svarovsky@gooddata.com"
     })
 
-    @standa = User.new("standa@gooddata.com", {
+    @standa = User.new({
       :first_name => "Standa",
-      :age => 45
+      :age => 45,
+      :id => "standa@gooddata.com"
     }) 
 
-    @martin = User.new("martin@gooddata.com", {
+    @martin = User.new({
       :first_name => "Martin",
       :age => 32,
+      :id => "martin@gooddata.com"
     })
 
-    @boss = User.new("boss@gooddata.com", {
+    @boss = User.new({
       :first_name => "The",
       :last_name => "Boss",
-      :age => 28
+      :age => 28,
+      :id => "boss@gooddata.com"
     })
 
-    @contractor = User.new("marcel@datahost.com", {
+    @contractor = User.new({
       :first_name => "Marcel",
-      :age => 25
+      :age => 25,
+      :id => "marcel@datahost.com"
     })
 
     @boss.subordinates << @martin
     @martin.subordinates << @tomas
     @martin.subordinates << @standa
-    @tomas.manager = @martin
-    @standa.manager = @martin
+    @tomas.managers << @martin
+    @standa.managers << @martin
   end
   
   it "should be instantiatable with array of users" do
@@ -132,4 +142,5 @@ describe "Hierarchy" do
     tomas = h.find_by_id("svarovsky@gooddata.com")
     tomas.age.should == 28
   end
+
 end

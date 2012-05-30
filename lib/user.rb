@@ -4,13 +4,14 @@ module GoodData
   module UserHierarchies
     class User
 
-      attr_accessor :user_id, :manager, :subordinates, :attributes
+      attr_accessor :user_id, :managers, :subordinates, :attributes
 
-      def initialize(id, attributes = {})
-        @user_id = id
-        @manager = attributes[:manager]
+      def initialize(attributes = {}, options={})
+        id_key = (options[:id_key] || :id).to_sym
+        @managers = attributes[:managers] || []
         @subordinates = attributes[:subordinates] || []
         @attributes = attributes.symbolize_keys!
+        @user_id = attributes[id_key]
       end
 
       def to_s
@@ -22,7 +23,11 @@ module GoodData
       end
 
       def all_managers
-         manager ? [manager] + manager.all_managers : []
+        if has_manager?
+          managers + managers.collect {|manager| manager.all_managers}.flatten
+        else
+          []
+        end
       end
 
       def is_manager?
@@ -34,20 +39,23 @@ module GoodData
       end
   
       def has_manager?
-        !manager.nil?
+        !managers.empty?
       end
 
 
       def is_standalone?
-        subordinates.length == 0 && manager.nil?
+        !has_subordinates? && !has_manager?
+        # subordinates.length == 0 && manager.nil?
       end
 
       def is_leaf?
-        subordinates.length == 0 && !manager.nil?
+        !has_subordinates? && has_manager?
+        # subordinates.length == 0 && !manager.nil?
       end
   
       def is_subordinate?
-        !manager.nil?
+        has_manager?
+        # !manager.nil?
       end
 
       def is_manager_of(user, options = {})
@@ -57,7 +65,7 @@ module GoodData
 
       def is_subordinate_of(user, options = {})
         direct = options[:direct] || false
-        direct ? manager == user : all_managers.include?(user)
+        direct ? managers.include?(user) : all_managers.include?(user)
       end
 
       def method_missing(method, *args)

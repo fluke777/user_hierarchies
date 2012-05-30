@@ -11,38 +11,6 @@ module GoodData
       self::USER_ID = "ID"
       self::MANAGER_ID = "MANAGERID"
       self::DESCRIBE = 'USERNAME'
-=begin    
-      def self.grab(options)
-        sf_module = options[:module] || fail("Specify SFDC module")
-        fields = options[:fields]
-        binding = options[:sfdc_connection]
-        output = options[:output]
-
-
-          fields = fields.split(', ') if fields.kind_of? String
-          values = fields.map {|v| v.to_sym}
-
-          query = "SELECT #{values.join(', ')} from #{sf_module}"
-          # puts query
-          answer = binding.query({:queryString => query})
-
-          # output << values
-          # pp answer
-          answer[:queryResponse][:result][:records].each do |row|
-            output << row.values_at(*values)
-          end
-
-          more_locator = answer[:queryResponse][:result][:queryLocator]
-
-          while more_locator do
-            answer_more = binding.queryMore({:queryLocator => more_locator})
-            answer_more[:queryMoreResponse][:result][:records].each do |row|
-              output << row.values_at(*values)
-            end
-            more_locator = answer_more[:queryMoreResponse][:result][:queryLocator]
-          end
-      end
-=end    
 
       def self::load_roles_from_sf(user, password)
         fields = [:Id,:ParentRoleId]
@@ -132,10 +100,10 @@ module GoodData
       def self::read_from_csv(filename, options = {})
         user_id_key = options[:user_id] || self::USER_ID
 
-        users_data = {}
+        users_data = []
 
         FasterCSV.foreach(filename, {:headers => true}) do |row|
-          users_data[row[user_id_key.to_s]] = row.to_hash
+          users_data << row.to_hash
         end
         
         h = self.build_hierarchy(users_data, options)
@@ -156,29 +124,80 @@ module GoodData
 
       end
 
-      def self.create_users(users_data, user_id_key)
+      def self.read_weird_hierarchy(file, options={})
         users = {}
-        users_data.each_pair do |id, user_data|
-          users[id] = User.new(id, user_data)
+        FasterCSV.foreach(file, :headers => true, :return_headers => false) do |row|
+          # Id,Sales_Region__c,Sales_Market__c,Sales_Team__c,Sales_Mgr_Rptn__c,Sales_Terr__c,user
+          index = [row['Sales_Region__c'], row["Sales_Market__c"], row["Sales_Team__c"], row["Sales_Mgr_Rptn__c"], row["Sales_Terr__c"]]
+          if index.include? "" then
+            puts "#{row['user']} has wrong definition"
+            next
+          end
+          users.has_key?(index) ?  users[index] << row.to_hash : users[index] = [row.to_hash]
         end
-        users
+        users_data = []
+        users.each_pair do |index, user|
+          
+          superior_index = index.dup
+          while superior_index.last == "0"
+            # puts "popping"
+            superior_index.pop
+          end
+          superior_index.pop
+          while superior_index.length < 5
+            superior_index.push "0"
+          end
+          user.each do |u|
+            u["ManagerId"] = []
+            users[superior_index] && users[superior_index].each do |manager|
+              u["ManagerId"] << manager["Id"]
+            end
+            users_data << u
+          end
+          
+        end
+        
+        h = self.build_hierarchy(users_data, {
+          :user_id => "Id",
+          :manager_id => "ManagerId"
+        })
+        block_given?() ? yield(h) : h
+      end
+
+      def self.create_users(users_data, user_id_key)
+        users_data.inject({}) do |memo, data|
+          u = User.new(data, {:id_key => user_id_key})
+          memo[u.user_id] = u
+          memo
+        end
       end
 
       def self.fill_managers!(users, manager_id_key)
-        users.each do |id, user|
-          manager_id = user.send manager_id_key
-          user.manager = users[manager_id]
+        users.values.each do |user|
+          manager_ids = user.send manager_id_key
+          manager_ids = if manager_ids.class == Array
+            manager_ids
+          elsif manager_ids.nil? || manager_ids.empty?
+            []
+          else
+            [manager_ids]
+          end
+          manager_ids.each do |manager_id|
+            user.managers << users[manager_id]
+          end
         end
         users
       end
 
       def self.fill_subordinates!(users, user_id_key)
-        us = users.values # just the users array
+        # us = users.values # just the users array
         managers_subordinates = {}
-        us.each do |user|
+        users.values.each do |user|
           if user.has_manager?
-            manager_id = user.manager.send user_id_key
-            managers_subordinates.has_key?(manager_id) ? managers_subordinates[manager_id] << user : (managers_subordinates[manager_id] = [user])
+            manager_ids = user.managers.map {|m| m.send user_id_key}
+            manager_ids.each do |manager_id|
+              managers_subordinates.has_key?(manager_id) ? managers_subordinates[manager_id] << user : (managers_subordinates[manager_id] = [user])
+            end
           end
         end
 
@@ -189,9 +208,10 @@ module GoodData
         
       end
 
-      def self::build_hierarchy(users_data, options={})
+      def self.build_hierarchy(users_data, options={})
         user_id_key = options[:user_id] || self::USER_ID
         manager_id_key = options[:manager_id] || self::MANAGER_ID
+        
         users = create_users(users_data, user_id_key)
         fill_managers!(users, manager_id_key)
         fill_subordinates!(users, user_id_key)
@@ -240,7 +260,7 @@ module GoodData
       end
     
       def go_interactive
-        # Ripl.start :binding => self.instance_eval{ binding }
+        binding.pry
       end
     
       def as_png
