@@ -68,33 +68,6 @@ module GoodData
             :as_hash => true
           })
           output
-=begin          
-          rforce_connection = RForce::Binding.new 'https://www.salesforce.com/services/Soap/u/21.0'
-          rforce_connection.login(user, password)
-
-          output = []
-          fields = [:Email, :Id, :ManagerId] + additional_fields
-          grab({
-            :module => 'User',
-            :output => output,
-            :fields => fields,
-            :sfdc_connection => rforce_connection
-          })
-
-          users_data = {}
-          output.each do |record|
-            row = {}
-            (fields.zip record).each {|pairs| row[pairs[0].to_s] = pairs[1]}
-            # puts record[1]
-            users_data[record[1]] = row
-          end
-          
-          h = self.build_hierarchy(users_data, {
-            :user_id => "Id",
-            :manager_id => "ManagerId"
-          })
-          block_given?() ? yield(h) : h
-=end
       end
     
       def self::read_from_csv(filename, options = {})
@@ -156,8 +129,20 @@ module GoodData
           end
           
         end
-        
-        h = self.build_hierarchy(users_data, {
+
+        fields = [
+        "Sales_Market__c",
+        "Id",
+        "Sales_Mgr_Rptn__c",
+        "user",
+        "Sales_Terr__c",
+        "ManagerId",
+        "Sales_Team__c",
+        "Sales_Region__c"
+        ]
+        hashed_users_data = get_mapped_data(users_data, fields, 'user')
+
+        h = self.build_hierarchy(hashed_users_data, {
           :user_id => "Id",
           :manager_id => "ManagerId"
         })
@@ -165,7 +150,7 @@ module GoodData
       end
 
       def self.create_users(users_data, user_id_key)
-        users_data.inject({}) do |memo, data|
+        users_data.values.inject({}) do |memo, data|
           u = User.new(data, {:id_key => user_id_key})
           memo[u.user_id] = u
           memo
@@ -183,7 +168,7 @@ module GoodData
             [manager_ids]
           end
           manager_ids.each do |manager_id|
-            user.managers << users[manager_id]
+            user.managers << users[manager_id] if users.has_key?(manager_id)
           end
         end
         users
@@ -211,7 +196,7 @@ module GoodData
       def self.build_hierarchy(users_data, options={})
         user_id_key = options[:user_id] || self::USER_ID
         manager_id_key = options[:manager_id] || self::MANAGER_ID
-        
+
         users = create_users(users_data, user_id_key)
         fill_managers!(users, manager_id_key)
         fill_subordinates!(users, user_id_key)

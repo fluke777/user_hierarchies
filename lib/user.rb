@@ -18,7 +18,7 @@ module GoodData
         "User: user_id=#{user_id}"
       end
 
-      def all_subordinates
+      def all_subordinates()
         subordinates + subordinates.collect {|subordinate| subordinate.all_subordinates}.flatten
       end
 
