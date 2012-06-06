@@ -1,7 +1,6 @@
 require 'user'
 require 'fastercsv'
 require 'pp'
-# require 'ripl'
 require 'salesforce'
 
 module GoodData
@@ -99,11 +98,16 @@ module GoodData
 
       def self.read_weird_hierarchy(file, options={})
         users = {}
+        fields = options[:fields] || []
+
+        fail "You have to specify path fields" if fields.empty?
+
         FasterCSV.foreach(file, :headers => true, :return_headers => false) do |row|
           # Id,Sales_Region__c,Sales_Market__c,Sales_Team__c,Sales_Mgr_Rptn__c,Sales_Terr__c,user
-          index = [row['Sales_Region__c'], row["Sales_Market__c"], row["Sales_Team__c"], row["Sales_Mgr_Rptn__c"], row["Sales_Terr__c"]]
+          index = row.values_at(*fields)
+          # [row['Sales_Region__c'], row["Sales_Market__c"], row["Sales_Team__c"], row["Sales_Mgr_Rptn__c"], row["Sales_Terr__c"]]
           if index.include? "" then
-            puts "#{row['user']} has wrong definition"
+            puts "#{row.to_s} has wrong definition"
             next
           end
           users.has_key?(index) ?  users[index] << row.to_hash : users[index] = [row.to_hash]

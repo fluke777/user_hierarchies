@@ -18,8 +18,23 @@ module GoodData
         "User: user_id=#{user_id}"
       end
 
-      def all_subordinates()
-        subordinates + subordinates.collect {|subordinate| subordinate.all_subordinates}.flatten
+      def get_subordinates(fields=[])
+        if fields.empty?
+          subordinates
+        else
+          subordinates.map {|s| fields.map {|f| s.send f}}
+        end
+      end
+
+      def all_subordinates(fields=[])
+        # binding.pry
+        all_s = (subordinates + subordinates.collect {|subordinate| subordinate.all_subordinates}.flatten)
+        if fields.empty?
+          all_s
+        else
+          all_s.map {|s| fields.map {|f| s.send f}}
+        end
+        
       end
 
       def all_managers
