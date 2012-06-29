@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# 1.9 adds realpath to resolve symlinks; 1.8 doesn't
+# have this method, so we add it so we get resolved symlinks
+# and compatibility
+unless File.respond_to? :realpath
+  class File #:nodoc:
+    def self.realpath path
+      return realpath(File.readlink(path)) if symlink?(path)
+      path
+    end
+  end
+end
+$: << File.expand_path(File.dirname(File.realpath(__FILE__)) + '/../lib')
+
+require 'rubygems'
+require 'gli'
+require 'pp'
+require 'user_hierarchies'
+include GLI
+
+program_desc 'User hierarchies - a little util to help you deal with user hierarchies'
+
+desc 'Password'
+arg_name 'password'
+flag [:p, :password]
+
+desc 'Login'
+arg_name 'login'
+flag [:l, :login]
+
+
+desc 'Jack into SalesForce project'
+command :jack_in do |c|
+  c.action do |global_options,options,args|
+    login     = global_options[:login]
+    password  = global_options[:password]
+    GoodData::UserHierarchies::UserHierarchy.load_users_from_sf(login, password) do |hierarchy|
+      binding.pry
+    end
+  end
+end
+
+pre do |global,command,options,args|
+  true
+end
+
+post do |global,command,options,args|
+end
+
+on_error do |exception|
+  true
+end
+
+exit GLI.run(ARGV)
+

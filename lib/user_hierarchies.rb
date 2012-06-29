@@ -6,7 +6,7 @@ require 'salesforce'
 module GoodData
   module UserHierarchies
     class UserHierarchy
-    
+
       self::USER_ID = "ID"
       self::MANAGER_ID = "MANAGERID"
       self::DESCRIBE = 'USERNAME'
@@ -17,27 +17,23 @@ module GoodData
           :module => "UserRole",
           :fields => fields
         })
-        
         users_data = self.get_mapped_data(data, fields, :Id)
-        
         h = self.build_hierarchy(users_data, {
         :user_id => "Id",
         :manager_id => "ParentRoleId"
         })
         block_given?() ? yield(h) : h
-        
+
       end
-      
+
       def self::load_users_from_sf(user, password)
         fields = [:Email,:Id,:ManagerId]
         data = self.load_from_sf(user, password, options={
           :module => "User",
           :fields => fields
         })
-        
         users_data = self.get_mapped_data(data, fields, :Id)
-        
-        
+
         h = self.build_hierarchy(users_data, {
         :user_id => "Id",
         :manager_id => "ManagerId"
@@ -45,7 +41,7 @@ module GoodData
         block_given?() ? yield(h) : h
 
       end
-      
+
       def self::get_mapped_data(data, fields, id_field)
         user_data = {}
         data.each do |row|
@@ -55,8 +51,7 @@ module GoodData
         end
         user_data
       end
-      
-      
+
       def self::load_from_sf(user, password, options={})
           client = Salesforce::Client.new(user, password)
           output = []
@@ -68,18 +63,26 @@ module GoodData
           })
           output
       end
-    
+
       def self::read_from_csv(filename, options = {})
         user_id_key = options[:user_id] || self::USER_ID
+        manager_id_key = options[:manager_id] || self::MANAGER_ID
 
-        users_data = []
-
+        data = []
+        fields = nil
         FasterCSV.foreach(filename, {:headers => true}) do |row|
-          users_data << row.to_hash
+          fields = row.headers
+          data << row.to_hash
         end
-        
-        h = self.build_hierarchy(users_data, options)
+
+        users_data = self.get_mapped_data(data, fields, user_id_key)
+
+        h = self.build_hierarchy(users_data, {
+          :user_id => user_id_key,
+          :manager_id => manager_id_key
+        })
         block_given?() ? yield(h) : h
+
       end
 
       def self::read_from_stdin(*options)
@@ -103,9 +106,7 @@ module GoodData
         fail "You have to specify path fields" if fields.empty?
 
         FasterCSV.foreach(file, :headers => true, :return_headers => false) do |row|
-          # Id,Sales_Region__c,Sales_Market__c,Sales_Team__c,Sales_Mgr_Rptn__c,Sales_Terr__c,user
           index = row.values_at(*fields)
-          # [row['Sales_Region__c'], row["Sales_Market__c"], row["Sales_Team__c"], row["Sales_Mgr_Rptn__c"], row["Sales_Terr__c"]]
           if index.include? "" then
             puts "#{row.to_s} has wrong definition"
             next
@@ -117,13 +118,13 @@ module GoodData
           
           superior_index = index.dup
           while superior_index.last == "0"
-            # puts "popping"
             superior_index.pop
           end
           superior_index.pop
           while superior_index.length < 5
             superior_index.push "0"
           end
+
           user.each do |u|
             u["ManagerId"] = []
             users[superior_index] && users[superior_index].each do |manager|

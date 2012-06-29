@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "user_hierarchies"
 
 Gem::Specification.new do |s|
   s.name        = "user_hierarchies"
@@ -24,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "facets"
   s.add_dependency "rforce"
   s.add_dependency "rspec"
-  s.add_dependency "jeweler"
   s.add_dependency "rcov"
-  
+  s.add_dependency "gli"
+
 end

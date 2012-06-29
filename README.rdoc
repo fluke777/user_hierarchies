@@ -17,50 +17,35 @@ But it is very tricky to get list of all managers/subordinates of Joe or to dete
 
     require 'user_hierarchies'
 
-
-    GoodData::UserHierarchies::UserHierarchy.load_from_sf(login, password) do |hierarchy|
-        hierarchy.users.each do |user|
-            puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
-        end
+    GoodData::UserHierarchies::UserHierarchy.load_users_from_sf("login", "pass") do |hierarchy|
+      hierarchy.users.each do |user|
+          puts "#{user.Email} => #{user.all_subordinates.map {|s| s.Email}.join(", ")}" if user.is_manager?
+      end
     end
 
 This script will download the hierarchy from SF account with credentials you provide and prints all subordinates of a person if that person has any. You can do the same for a file
 
-  GoodData::UserHierarchies::UserHierarchy::read_from_csv("file_name") do |hierarchy|
-      hierarchy.users.each do |user|
-          puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
-      end
+
+  GoodData::UserHierarchies::UserHierarchy.read_from_csv('sample_hierarchy.csv', {
+    :user_id => 'Id',
+    :manager_id => 'ManagerId'
+  }) do |hierarchy|
+    hierarchy.users.each do |user|
+        puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
+    end
   end
 
-Since I was trying no to tie the implementation to expectations about specific file format you sometimes need to provide the program with some additional hints where to look for things. For building the hierarchy you need to tell the program where to find user id and where to find manager's id. It is also useful to put there a field that is used with to_s method for descriptions etc.
+The code is not exactly the same as before but the only additional thing is to provide hints about the fields which are used to identify each user and the field that identifies the manager.
 
-Imagine this CSV
+The default is ID and MANAGERID so you can omit the definition if you conform to that.
 
-    name,UsErID,MaNaGeRID
-    Joe,1,2
-    Bob,2,3
-    Jim,3,
-
-This program does exactly the same thing as the one above
-
-    GoodData::UserHierarchies::UserHierarchy.read_from_csv("file_name", {
-        :user_id => "UsErID",
-        :manager_id => "MaNaGeRID",
-        :description_field => "name"
-    }) do |hierarchy|
-        hierarchy.users.each do |user|
-            puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
-        end
-    end
-
-Besides that there is little meta programming magic built in so if you have for example some additional information that you would like to use say
+* Arbitrary fields
+On top of that that there is little meta programming magic built in so if you have for example some additional information that you would like to use say
 
     name,user_id,manager_id,some_arbitrary_info
     Joe,1,2,Foo
     Bob,2,3,Bar
     Jim,3,,Baz
-
-* Arbitrary fields
 
 It is very easy to use this information in your program
 
@@ -74,13 +59,13 @@ As you can see the method name is based on the header of csv
 
 * Interactive Usage
 
-Sometimes it is nice to just dive inside the hierarchy and literally walk inside it. You can easily do this with this gem
+Sometimes it is nice to just dive inside the hierarchy and literally live inside it. You can easily do this with this gem
 
     GoodData::UserHierarchies::UserHierarchy.from_sf(login, password) do |hierarchy|
         hierarchy.go_interactive
     end
 
-when you run this script you will be able to use REPL with all the stuff preloaded. You can then interactively play with the hierarchy. This uses awesome gem pry behind the scenes.
+when you run this script you will be able to use REPL with all the stuff preloaded. You can then interactively play with the hierarchy. This uses awesome gem pry behind the scenes. You can do all the crazy stuff there (of course this can also be used in non interactive mode)
 
     joe = find_user("1231safdas432")
     bob = find_user("123123wqe2423")
@@ -90,17 +75,40 @@ when you run this script you will be able to use REPL with all the stuff preload
     
     bob.is_manager_of? joe
     bob.is_subordinate_of? joe
-    
+
+    # direct subordinates
+    bob.subordinates
+
+    # all subordinates
     bob.all_subordinates.size
-    
+
+    # if you want only emails (or other field)
+    bob.all_subordinates.map {|s| s.Email}
+
+    # you can use a shorthand for this
+    bob.all_subordinates(["Email"])
+
     bob.has_manager?
-    bobs_manager = bob.manager
+    bobs_manager = bob.managers
     
     bobs_subordinate = bob.subordinates.first
+    
+    # Take advantage of awsome ruby expresivness
+    # List all people that has more than 10 subordinates
+    hierarchy.users.find_all {|u| u.all_subordinates.count > 10}
+
+    
+
+* Salesforce
+I use this mostly with salesforce so there are some things to make this even easier. First of all you can tap in directly to the SF in an interactive mode by using the combination of above mentioned techniques. Moreover the gem comes with a little command line tool that lets you jack in directly from your terminal session.
+
+  user_hiererachies -l login -p password jack_in_sf
+
+Wait couple of seconds before the data downloads and boom you are in.
 
 Speed
 
-I do not know if the library is fast or not. For the biggest customer I have used this which has like 6000 users this was fast enough (under 1 second to generate what I needed. I bet there might be done some improvements. If you have some suggestions let me know.
+I do not know if the library is fast or not. For the biggest customer I have used this which has like 9000 users this was fast enough (under 1 second to generate what I needed. I bet there might be done some improvements. If you have some suggestions let me know.
 
 == Contributing to user_hierarchies
  

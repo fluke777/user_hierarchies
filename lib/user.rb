@@ -27,32 +27,31 @@ module GoodData
       end
 
       def all_subordinates(fields=[])
-        # binding.pry
         all_s = (subordinates + subordinates.collect {|subordinate| subordinate.all_subordinates}.flatten)
         if fields.empty?
           all_s
         else
           all_s.map {|s| fields.map {|f| s.send f}}
         end
-        
       end
 
-      def all_managers
-        if has_manager?
-          managers + managers.collect {|manager| manager.all_managers}.flatten
+      def all_managers(fields=[])
+        all_m = (managers + managers.collect {|manager| manager.all_managers}.flatten)
+        if fields.empty?
+          all_m
         else
-          []
+          all_m.map {|m| fields.map {|f| m.send f}}
         end
       end
 
       def is_manager?
         subordinates.length > 0
       end
-  
+
       def has_subordinates?
         is_manager?
       end
-  
+
       def has_manager?
         !managers.empty?
       end
@@ -73,12 +72,12 @@ module GoodData
         # !manager.nil?
       end
 
-      def is_manager_of(user, options = {})
+      def is_manager_of?(user, options = {})
         direct = options[:direct] || false
         direct ? subordinates.include?(user) : all_subordinates.include?(user)
       end
 
-      def is_subordinate_of(user, options = {})
+      def is_subordinate_of?(user, options = {})
         direct = options[:direct] || false
         direct ? managers.include?(user) : all_managers.include?(user)
       end
@@ -86,6 +85,11 @@ module GoodData
       def method_missing(method, *args)
         return @attributes[method] if @attributes.has_key?(method)
         super
+      end
+
+      def pretty_print(printer)
+        printer.text "User: <#{user_id}>\n"
+        attributes.each_pair {|k, v| printer.text "    #{k} => #{v}\n"}
       end
 
     end
