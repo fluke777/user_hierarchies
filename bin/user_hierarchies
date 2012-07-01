@@ -20,20 +20,24 @@ include GLI
 
 program_desc 'User hierarchies - a little util to help you deal with user hierarchies'
 
-desc 'Password'
-arg_name 'password'
-flag [:p, :password]
-
-desc 'Login'
-arg_name 'login'
-flag [:l, :login]
-
-
 desc 'Jack into SalesForce project'
-command :jack_in do |c|
+command :jack_in_sf do |c|
+
+  c.desc 'Salesforce password'
+  c.arg_name 'password'
+  c.flag [:p, :password]
+
+  c.desc 'Salesforce login'
+  c.arg_name 'login'
+  c.flag [:l, :login]
+
+  c.desc 'Load a role based hierarchy -- Not implemented'
+  c.arg_name 'role_based'
+  c.switch [:r, :roles]
+
   c.action do |global_options,options,args|
-    login     = global_options[:login]
-    password  = global_options[:password]
+    login     = options[:login]
+    password  = options[:password]
     GoodData::UserHierarchies::UserHierarchy.load_users_from_sf(login, password) do |hierarchy|
       binding.pry
     end
@@ -52,4 +56,3 @@ on_error do |exception|
 end
 
 exit GLI.run(ARGV)
-

@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.email       = ["svarovsky.tomas@gmail.com"]
   s.homepage    = ""
   s.summary     = %q{User hierarchies}
-  s.description = %q{User hierarchies}
+  s.description = %q{A gem that should help you with inspecting user hierarchies - especially those based on SF model}
 
   s.rubyforge_project = "user_hierarchies"
 
@@ -18,12 +18,9 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  # specify any dependencies here; for example:
   s.add_dependency "fastercsv"
   s.add_dependency "facets"
   s.add_dependency "rforce"
   s.add_dependency "rspec"
-  s.add_dependency "rcov"
   s.add_dependency "gli"
-
 end

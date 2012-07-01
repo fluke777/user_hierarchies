@@ -102,7 +102,7 @@ when you run this script you will be able to use REPL with all the stuff preload
 * Salesforce
 I use this mostly with salesforce so there are some things to make this even easier. First of all you can tap in directly to the SF in an interactive mode by using the combination of above mentioned techniques. Moreover the gem comes with a little command line tool that lets you jack in directly from your terminal session.
 
-  user_hiererachies -l login -p password jack_in_sf
+  user_hiererachies jack_in_sf -l login -p password
 
 Wait couple of seconds before the data downloads and boom you are in.
 
