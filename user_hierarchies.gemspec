@@ -1,9 +1,10 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
+require 'version'
 
 Gem::Specification.new do |s|
   s.name        = "user_hierarchies"
-  s.version     = "123"
+  s.version     = GoodData::UserHierarchies::VERSION
   s.authors     = ["Tomas Svarovsky"]
   s.email       = ["svarovsky.tomas@gmail.com"]
   s.homepage    = ""

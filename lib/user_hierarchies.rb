@@ -2,6 +2,7 @@ require 'user'
 require 'fastercsv'
 require 'pp'
 require 'salesforce'
+require 'version'
 
 module GoodData
   module UserHierarchies
