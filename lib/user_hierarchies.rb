@@ -103,16 +103,24 @@ module GoodData
       def self.read_weird_hierarchy(file, options={})
         users = {}
         fields = options[:fields] || []
+        manager_id = options[:manager_id] || MANAGER_ID
+        user_id = options[:user_id] || USER_ID
 
         fail "You have to specify path fields" if fields.empty?
 
-        FasterCSV.foreach(file, :headers => true, :return_headers => false) do |row|
-          index = row.values_at(*fields)
-          if index.include? "" then
-            puts "#{row.to_s} has wrong definition"
-            next
+        headers = nil
+
+        FasterCSV.foreach(file, :headers => true, :return_headers => true) do |row|
+          if row.header_row?
+            headers = row.fields
+          else
+            index = row.values_at(*fields)
+            if index.include? "" then
+              puts "#{row.to_s} has wrong definition"
+              next
+            end
+            users.has_key?(index) ?  users[index] << row.to_hash : users[index] = [row.to_hash]
           end
-          users.has_key?(index) ?  users[index] << row.to_hash : users[index] = [row.to_hash]
         end
         users_data = []
         users.each_pair do |index, user|
@@ -127,30 +135,19 @@ module GoodData
           end
 
           user.each do |u|
-            u["ManagerId"] = []
+            u[manager_id] = []
             users[superior_index] && users[superior_index].each do |manager|
-              u["ManagerId"] << manager["Id"]
+              u[manager_id] << manager[user_id]
             end
             users_data << u
           end
           
         end
 
-        fields = [
-        "Sales_Market__c",
-        "Id",
-        "Sales_Mgr_Rptn__c",
-        "user",
-        "Sales_Terr__c",
-        "ManagerId",
-        "Sales_Team__c",
-        "Sales_Region__c"
-        ]
-        hashed_users_data = get_mapped_data(users_data, fields, 'user')
-
+        hashed_users_data = get_mapped_data(users_data, headers + [manager_id], user_id)
         h = self.build_hierarchy(hashed_users_data, {
-          :user_id => "Id",
-          :manager_id => "ManagerId"
+          :user_id => user_id,
+          :manager_id => manager_id
         })
         block_given?() ? yield(h) : h
       end
