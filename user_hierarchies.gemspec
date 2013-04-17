@@ -3,7 +3,7 @@ require 'lib/version'
 
 Gem::Specification.new do |s|
   s.name        = "user_hierarchies"
-  s.version     = GoodData::UserHierarchies::VERSION
+  s.version     = "0.1"
   s.authors     = ["Tomas Svarovsky"]
   s.email       = ["svarovsky.tomas@gmail.com"]
   s.homepage    = ""
