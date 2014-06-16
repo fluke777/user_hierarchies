@@ -19,7 +19,7 @@ But it is very tricky to get list of all managers/subordinates of Joe or to dete
 
     GoodData::UserHierarchies::UserHierarchy.load_users_from_sf("login", "pass") do |hierarchy|
       hierarchy.users.each do |user|
-          puts "#{user.Email} => #{user.all_subordinates.map {|s| s.Email}.join(", ")}" if user.is_manager?
+          puts "#{user.Email} => #{user.all_subordinates.map {|s| s.Email}.join(", ")}" if user.manager?
       end
     end
 
@@ -31,7 +31,7 @@ This script will download the hierarchy from SF account with credentials you pro
     :manager_id => 'ManagerId'
   }) do |hierarchy|
     hierarchy.users.each do |user|
-        puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.is_manager?
+        puts "#{user.name} => #{user.all_subordinates.map {|s| s.name}.join(", ")}" if user.manager?
     end
   end
 
@@ -70,11 +70,11 @@ when you run this script you will be able to use REPL with all the stuff preload
     joe = find_user("1231safdas432")
     bob = find_user("123123wqe2423")
     
-    joe.is_manager?
-    bob.is_manager?
+    joe.manager?
+    bob.manager?
     
-    bob.is_manager_of? joe
-    bob.is_subordinate_of? joe
+    bob.manager_of? joe
+    bob.subordinate_of? joe
 
     # direct subordinates
     bob.subordinates

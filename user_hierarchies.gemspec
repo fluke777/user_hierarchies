@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
-require 'lib/version'
+$:.push File.expand_path("../lib/", __FILE__)
+require 'user_hierarchies/version'
 
 Gem::Specification.new do |s|
   s.name        = "user_hierarchies"
@@ -18,9 +19,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_dependency "fastercsv"
-  s.add_dependency "facets"
-  s.add_dependency "rforce"
-  s.add_dependency "rspec"
-  s.add_dependency "gli"
+  s.add_dependency "activesupport"
+  s.add_dependency 'rspec'
+  s.add_dependency 'pry'
 end
