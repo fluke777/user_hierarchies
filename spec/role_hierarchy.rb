@@ -23,7 +23,7 @@ describe 'Role based hierarchy with missing users on positions' do
       { role_id: 4, role: 'MegaBoss', parent_role: nil }
     ]
 
-    res = GoodData::Utils.lookup(@master, @roles, [:role_id], [:role_id])
+    res = GoodData::Helpers.lookup(@master, @roles, [:role_id], [:role_id])
 
     @hierarchy = UserHierarchy.build_hierarchy(res,
                                                hashing_id: :user_id,

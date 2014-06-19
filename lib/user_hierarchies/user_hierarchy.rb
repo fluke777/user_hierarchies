@@ -75,9 +75,9 @@ module GoodData
         hashing_key = options[:hashing_id] || user_id_key
         manager_id_key = options[:manager_id] || self::MANAGER_ID
         users = users_data.map do |data|
-          User.new(data.to_h)
+          User.new(data.to_hash)
         end
-        mapped_users_data = GoodData::Utils.create_lookup(users, user_id_key)
+        mapped_users_data = GoodData::Helpers.create_lookup(users, user_id_key)
         fill_managers!(users, mapped_users_data, manager_id_key)
         fill_subordinates!(users, mapped_users_data, user_id_key)
         UserHierarchy.new(users, options.merge(
@@ -96,7 +96,7 @@ module GoodData
       end
 
       def build_lookup
-        GoodData::Utils.create_lookup(@users, @hashing_id).reduce({}) do |a, e|
+        GoodData::Helpers.create_lookup(@users, @hashing_id).reduce({}) do |a, e|
           _, val = [e[0], e[1]]
           a[e.first] = val.nil? ? nil : val.first
           a

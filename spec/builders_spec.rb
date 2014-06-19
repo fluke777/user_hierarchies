@@ -57,7 +57,7 @@ describe UserHierarchy do
     users = @data.map do |data|
       User.new(data)
     end
-    user_lookup = GoodData::Utils.create_lookup(users, 'user_id')
+    user_lookup = GoodData::Helpers.create_lookup(users, 'user_id')
     # users = UserHierarchy.create_users(@data, 'user_id')
     UserHierarchy.fill_managers!(users, user_lookup, 'manager_id')
 
@@ -81,7 +81,7 @@ describe UserHierarchy do
     users = @data.map do |data|
       User.new(data)
     end
-    user_lookup = GoodData::Utils.create_lookup(users, :user_id)
+    user_lookup = GoodData::Helpers.create_lookup(users, :user_id)
     UserHierarchy.fill_managers!(users, user_lookup, :manager_id)
     UserHierarchy.fill_subordinates!(users, user_lookup, :user_id)
 

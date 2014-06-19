@@ -10,7 +10,7 @@ module Enumerable
 end
 
 module GoodData
-  module Utils
+  module Helpers
     def self.create_lookup(collection, on)
       lookup = {}
       if on.is_a?(Array)
@@ -29,23 +29,28 @@ module GoodData
       lookup
     end
 
-    def self.lookup(master, slave, on, on2)
+    def self.join(master, slave, on, on2, options = {})
+      full_outer = options[:full_outer]
+
       lookup = create_lookup(slave, on2)
       marked_lookup = {}
       results = master.reduce([]) do |a, line|
         matching_values = lookup[line.values_at(*on)] || []
         marked_lookup[line.values_at(*on)] = 1
         if matching_values.empty?
-          a << line.to_h
+          a << line.to_hash
         else
           matching_values.each do |matching_value|
-            a << matching_value.to_h.merge(line.to_h)
+            a << matching_value.to_hash.merge(line.to_hash)
           end
         end
         a
       end
-      (lookup.keys - marked_lookup.keys).each do |key|
-        results << lookup[key].first.to_h
+
+      if full_outer
+        (lookup.keys - marked_lookup.keys).each do |key|
+          results << lookup[key].first.to_hash
+        end
       end
       results
     end
