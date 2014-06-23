@@ -86,7 +86,7 @@ module GoodData
           hashing_id: hashing_key))
       end
 
-      attr_accessor :users
+      attr_accessor :users, :hashing_id
 
       def initialize(users, options = {})
         @users = users
