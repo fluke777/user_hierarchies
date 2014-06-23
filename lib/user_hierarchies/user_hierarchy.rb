@@ -71,9 +71,9 @@ module GoodData
       end
 
       def self.build_hierarchy(users_data, options = {})
-        user_id_key = options[:id] || self::USER_ID
-        hashing_key = options[:hashing_id] || user_id_key
-        manager_id_key = options[:manager_id] || self::MANAGER_ID
+        user_id_key = options[:id] || options['id'] || self::USER_ID
+        hashing_key = options[:hashing_id] || options['hashing_id'] || user_id_key
+        manager_id_key = options[:manager_id] || options['manager_id'] || self::MANAGER_ID
         users = users_data.map do |data|
           User.new(data.to_hash)
         end
