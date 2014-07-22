@@ -90,6 +90,10 @@ module GoodData
         direct = options[:direct] || false
         direct ? managers.include?(user) : all_managers.include?(user)
       end
+
+      def []key
+        send(key)
+      end
     end
   end
 end
