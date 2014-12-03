@@ -45,9 +45,7 @@ module GoodData
                        else
                          lookup[key]
                        end
-            managers.each do |manager|
-              user.managers << manager
-            end
+            user.managers = managers.uniq
           end
         end
         users
@@ -66,7 +64,7 @@ module GoodData
         end
         managers_subordinates.each do |manager_key, subordinates|
           managers = lookup[manager_key]
-          managers && managers.each { |manager| manager.subordinates = subordinates }
+          managers && managers.each { |manager| manager.subordinates = subordinates.uniq }
         end
       end
 
